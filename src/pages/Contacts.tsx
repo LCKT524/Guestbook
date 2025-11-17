@@ -1,12 +1,22 @@
 import { useState } from 'react'
-import { Search, Plus, User, Phone, Calendar, DollarSign } from 'lucide-react'
+import { Search, Plus, User, Phone, Calendar, DollarSign, Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useApp } from '../contexts/AppContext'
 import { useNavigate } from 'react-router-dom'
 
 export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState('')
-  const { contacts, loading } = useApp()
+  const { contacts, loading, deleteContact } = useApp()
   const navigate = useNavigate()
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteContact(id)
+      toast.success('已删除联系人')
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
+  }
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,11 +112,18 @@ export default function Contacts() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex items-center space-x-2">
                     <div className="text-sm text-gray-500">电话</div>
                     <div className="text-lg font-semibold text-orange-500">
                       {contact.phone || '—'}
                     </div>
+                    <button
+                      className="p-2 text-gray-400 hover:text-red-600"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(contact.id) }}
+                      aria-label="删除联系人"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>

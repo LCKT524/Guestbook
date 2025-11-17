@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Search, Filter, Download, Calendar, DollarSign, User } from 'lucide-react'
+import { Search, Filter, Download, Calendar, DollarSign, User, Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useApp } from '../contexts/AppContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -8,7 +9,7 @@ export default function Records() {
   const [typeFilter, setTypeFilter] = useState<'all' | 'gift_given' | 'gift_received'>('all')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [dateFilter, setDateFilter] = useState('')
-  const { records, contacts, categories, loading } = useApp()
+  const { records, contacts, categories, loading, deleteRecord } = useApp()
   const navigate = useNavigate()
 
   const filteredRecords = records.filter(record => {
@@ -23,6 +24,15 @@ export default function Records() {
     
     return matchesSearch && matchesType && matchesCategory && matchesDate
   })
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteRecord(id)
+      toast.success('已删除记录')
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
+  }
 
   // 计算统计数据
   const totalGiven = filteredRecords
@@ -187,13 +197,20 @@ export default function Records() {
                         )}
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex items-center space-x-2">
                       <div className={`text-lg font-semibold ${isGiven ? 'text-red-600' : 'text-green-600'}`}>
                         {isGiven ? '-' : '+'}¥{record.amount.toLocaleString()}
                       </div>
                       {record.payment_method && (
                         <div className="text-xs text-gray-500 mt-1">{record.payment_method}</div>
                       )}
+                      <button
+                        className="p-2 text-gray-400 hover:text-red-600"
+                        onClick={(e) => { e.stopPropagation(); handleDelete(record.id) }}
+                        aria-label="删除记录"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

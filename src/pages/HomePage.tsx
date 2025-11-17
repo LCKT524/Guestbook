@@ -22,6 +22,20 @@ export default function Home() {
     .reduce((sum, record) => sum + record.amount, 0)
 
   const recentRecords = records.slice(0, 5)
+  const netMonthly = monthlyReceived - monthlyGiven
+
+  const months: string[] = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - (5 - i))
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+  const monthlySeries = months.map(m => {
+    const rs = records.filter(r => r.record_date.startsWith(m))
+    const given = rs.filter(r => r.type === 'gift_given').reduce((s, r) => s + r.amount, 0)
+    const recv = rs.filter(r => r.type === 'gift_received').reduce((s, r) => s + r.amount, 0)
+    return recv - given
+  })
+  const maxAbs = Math.max(1, ...monthlySeries.map(v => Math.abs(v)))
 
   if (loading) {
     return (
@@ -61,6 +75,33 @@ export default function Home() {
           </div>
           <div className="text-2xl font-bold text-gray-900">¥{monthlyReceived.toLocaleString()}</div>
           <div className="text-sm text-gray-600">收礼收入</div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-2">
+            <div className="p-2 bg-slate-50 rounded-lg">
+              <TrendingUp className={`w-5 h-5 ${netMonthly >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+            </div>
+            <span className="text-xs text-gray-500">本月</span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">¥{netMonthly.toLocaleString()}</div>
+          <div className="text-sm text-gray-600">净收入</div>
+        </div>
+      </div>
+
+      {/* 趋势看板 */}
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <h2 className="text-lg font-semibold mb-4">6个月净额趋势</h2>
+        <div className="flex items-end space-x-2 h-24">
+          {monthlySeries.map((v, idx) => {
+            const h = Math.round((Math.abs(v) / maxAbs) * 96)
+            const pos = v >= 0
+            return (
+              <div key={idx} className="flex flex-col items-center">
+                <div className={`w-6 ${pos ? 'bg-green-500' : 'bg-red-500'}`} style={{ height: `${h}px` }} />
+                <div className="text-xs text-gray-500 mt-1">{months[idx].slice(5)}</div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
