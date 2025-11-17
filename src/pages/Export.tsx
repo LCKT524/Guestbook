@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
 
 export default function Export() {
-  const { records, contacts } = useApp()
+  const { records, contacts, categories } = useApp()
   const [exporting, setExporting] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -23,10 +23,10 @@ export default function Export() {
       let filteredRecords = records
       
       if (startDate) {
-        filteredRecords = filteredRecords.filter(r => r.event_date >= startDate)
+        filteredRecords = filteredRecords.filter(r => r.record_date >= startDate)
       }
       if (endDate) {
-        filteredRecords = filteredRecords.filter(r => r.event_date <= endDate)
+        filteredRecords = filteredRecords.filter(r => r.record_date <= endDate)
       }
       if (exportType !== 'all') {
         filteredRecords = filteredRecords.filter(r => r.type === `gift_${exportType}`)
@@ -40,15 +40,17 @@ export default function Export() {
       // 准备导出数据
       const exportData = filteredRecords.map(record => {
         const contact = contacts.find(c => c.id === record.contact_id)
+        const category = categories.find(cat => cat.id === record.category_id)
         return {
           '事件名称': record.event_name,
           '联系人': contact?.name || '未知联系人',
-          '关系': contact?.relationship || '',
+          '地址': contact?.address || '',
           '类型': record.type === 'gift_given' ? '送礼' : '收礼',
-          '日期': record.event_date,
+          '日期': record.record_date,
           '金额': record.amount,
           '支付方式': record.payment_method || '',
-          '备注': record.notes || '',
+          '备注': record.note || '',
+          '分类': category?.name || '',
           '创建时间': new Date(record.created_at).toLocaleString('zh-CN'),
         }
       })
@@ -62,7 +64,7 @@ export default function Export() {
       const colWidths = [
         { wch: 15 }, // 事件名称
         { wch: 12 }, // 联系人
-        { wch: 10 }, // 关系
+        { wch: 10 }, // 地址
         { wch: 8 },  // 类型
         { wch: 12 }, // 日期
         { wch: 10 }, // 金额

@@ -10,7 +10,7 @@ export default function Home() {
   // 计算统计数据
   const currentMonth = new Date().toISOString().slice(0, 7)
   const monthlyRecords = records.filter(record => 
-    record.event_date.startsWith(currentMonth)
+    record.record_date.startsWith(currentMonth)
   )
 
   const monthlyGiven = monthlyRecords
@@ -105,7 +105,7 @@ export default function Home() {
                     <div>
                       <div className="font-medium text-gray-900">{record.event_name}</div>
                       <div className="text-sm text-gray-600">
-                        {contact?.name || '未知联系人'} · {record.event_date}
+                        {contact?.name || '未知联系人'} · {record.record_date}
                       </div>
                     </div>
                   </div>

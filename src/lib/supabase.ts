@@ -48,12 +48,13 @@ export interface Record {
   id: string
   user_id: string
   contact_id?: string
+  category_id?: string
   type: 'gift_given' | 'gift_received'
   event_name: string
-  event_date: string
+  record_date: string
   amount: number
   payment_method?: string
-  notes?: string
+  note?: string
   attachments?: Array<{
     url: string
     name: string
@@ -154,19 +155,19 @@ export const records = {
       .from('records')
       .select(`
         *,
-        contacts!inner(name, relationship)
+        contacts(name, relationship)
       `)
       .eq('user_id', userId)
-      .order('event_date', { ascending: false })
+      .order('record_date', { ascending: false })
 
     if (filters?.type) {
       query = query.eq('type', filters.type)
     }
     if (filters?.startDate) {
-      query = query.gte('event_date', filters.startDate)
+      query = query.gte('record_date', filters.startDate)
     }
     if (filters?.endDate) {
-      query = query.lte('event_date', filters.endDate)
+      query = query.lte('record_date', filters.endDate)
     }
     if (filters?.contactId) {
       query = query.eq('contact_id', filters.contactId)
@@ -206,10 +207,10 @@ export const records = {
       .eq('user_id', userId)
 
     if (startDate) {
-      query = query.gte('event_date', startDate)
+      query = query.gte('record_date', startDate)
     }
     if (endDate) {
-      query = query.lte('event_date', endDate)
+      query = query.lte('record_date', endDate)
     }
 
     return query

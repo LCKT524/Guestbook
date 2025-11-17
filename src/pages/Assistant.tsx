@@ -3,7 +3,7 @@ import { SendHorizonal, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import { useApp } from '../contexts/AppContext'
-import { parseMessage } from '../lib/agent/gift-sprite'
+import { analyze } from '../lib/agent/agentBridge'
 
 type ChatMsg = { role: 'user' | 'assistant', text: string }
 
@@ -14,6 +14,18 @@ export default function Assistant() {
   ])
   const { user } = useAuth()
   const { contacts, addContact, addRecord } = useApp()
+  const [pending, setPending] = useState<{
+    intent: {
+      type: 'gift_given' | 'gift_received'
+      contact_name?: string
+      event_name: string
+      amount: number
+      record_date: string
+      payment_method?: string
+      notes?: string
+    } | null,
+    contactId?: string
+  }>({ intent: null })
 
   const handleSend = async () => {
     const text = input.trim()
@@ -26,47 +38,54 @@ export default function Assistant() {
       return
     }
 
-    const intent = parseMessage(text)
-    if (!intent) {
-      const reply = '我没理解你的意思。你可以这样描述：“给李雷随礼500元婚礼，微信”。'
+    // 确认保存
+    if (/^确认(?:保存)?$/.test(text)) {
+      if (!pending.intent) {
+        setMessages(prev => [...prev, { role: 'assistant', text: '暂无待确认记录，请先输入要记录的内容。' }])
+        return
+      }
+      try {
+        let contactId = pending.contactId
+        if (!contactId && pending.intent?.contact_name) {
+          const found = contacts.find(c => c.name === pending.intent?.contact_name)
+          if (found) {
+            contactId = found.id
+          } else if (user) {
+            const created = await addContact({ user_id: user.id, name: pending.intent?.contact_name })
+            contactId = created.id
+          }
+        }
+        await addRecord({
+          user_id: user!.id,
+          contact_id: contactId,
+          type: pending.intent!.type,
+          event_name: pending.intent!.event_name,
+          record_date: pending.intent!.record_date,
+          amount: pending.intent!.amount,
+          payment_method: pending.intent!.payment_method,
+          note: pending.intent!.notes,
+        })
+        setMessages(prev => [...prev, { role: 'assistant', text: '✔️ 已保存' }])
+        setPending({ intent: null, contactId: undefined })
+        return
+      } catch (e: any) {
+        toast.error(e?.message || '保存失败')
+        return
+      }
+    }
+
+    const analyzed = await analyze(text)
+    if (!analyzed.ok || !analyzed.data) {
+      const reply = analyzed.error || '我没理解你的意思。你可以这样描述：“给李雷随礼500元婚礼，微信”。'
       setMessages(prev => [...prev, { role: 'assistant', text: reply }])
       return
     }
 
-    try {
-      let contactId: string | undefined
-      if (intent.contact_name) {
-        const found = contacts.find(c => c.name === intent.contact_name)
-        if (found) {
-          contactId = found.id
-        } else {
-          await addContact({
-            user_id: user.id,
-            name: intent.contact_name,
-          })
-          const updated = [...contacts]
-          const created = updated.find(c => c.name === intent.contact_name)
-          contactId = created?.id
-        }
-      }
-
-      await addRecord({
-        user_id: user.id,
-        contact_id: contactId,
-        type: intent.type,
-        event_name: intent.event_name,
-        event_date: intent.event_date,
-        amount: intent.amount,
-        payment_method: intent.payment_method,
-        notes: intent.notes,
-      })
-
-      const reply = `已记录：${intent.event_name} ${intent.type === 'gift_given' ? '送礼' : '收礼'} ¥${intent.amount} ${intent.contact_name ? '· ' + intent.contact_name : ''}`
-      setMessages(prev => [...prev, { role: 'assistant', text: reply }])
-      toast.success('已录入')
-    } catch (e: any) {
-      toast.error(e?.message || '录入失败')
-    }
+    // 仅播报，不保存，等待确认
+    setMessages(prev => [...prev, { role: 'assistant', text: analyzed.display! }])
+    setMessages(prev => [...prev, { role: 'assistant', text: '请回复【确认】保存，或继续补充：联系人/备注/日期/金额' }])
+    const found = analyzed.data.contact_name ? contacts.find(c => c.name === analyzed.data.contact_name) : undefined
+    setPending({ intent: analyzed.data, contactId: found?.id })
   }
 
   return (

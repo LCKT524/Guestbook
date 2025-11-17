@@ -1,16 +1,18 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { recordsAPI, contactsAPI, GiftRecord, Contact, isDemo } from '../lib/supabase-client-fixed'
+import { records as recordsAPI, contacts as contactsAPI, categories as categoriesAPI, isDemo } from '../lib/supabase-client'
+import type { Record as GiftRecord, Contact, Category } from '../lib/supabase-client'
 import { useAuth } from './AuthContext'
 
 interface AppContextType {
   records: GiftRecord[]
   contacts: Contact[]
+  categories: Category[]
   loading: boolean
   refreshData: () => Promise<void>
-  addRecord: (record: Omit<GiftRecord, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
+  addRecord: (record: Omit<GiftRecord, 'id' | 'created_at' | 'updated_at'>) => Promise<GiftRecord | void>
   updateRecord: (id: string, record: Partial<GiftRecord>) => Promise<void>
   deleteRecord: (id: string) => Promise<void>
-  addContact: (contact: Omit<Contact, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
+  addContact: (contact: Omit<Contact, 'id' | 'created_at' | 'updated_at'>) => Promise<Contact>
   updateContact: (id: string, contact: Partial<Contact>) => Promise<void>
   deleteContact: (id: string) => Promise<void>
 }
@@ -21,6 +23,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [records, setRecords] = useState<GiftRecord[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
+  const [categories, setCategories] = useState<Category[]>([])
   const { user } = useAuth()
 
   const refreshData = async () => {
@@ -40,6 +43,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const { data: contactsData, error: contactsError } = await contactsAPI.list(user.id)
         if (contactsError) throw contactsError
         setContacts(contactsData || [])
+        const { data: categoriesData, error: categoriesError } = await categoriesAPI.list(user.id)
+        if (categoriesError) throw categoriesError
+        setCategories(categoriesData || [])
       }
     } catch (error) {
       console.error('获取数据失败:', error)
@@ -56,12 +62,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('demoRecords', JSON.stringify(next))
         return next
       })
-      return
+      return newRec
     }
     const { data, error } = await recordsAPI.create(record)
     if (error) throw error
     if (data) {
       setRecords(prev => [data, ...prev])
+      return data as GiftRecord
     }
   }
 
@@ -103,13 +110,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('demoContacts', JSON.stringify(next))
         return next
       })
-      return
+      return newC
     }
     const { data, error } = await contactsAPI.create(contact)
     if (error) throw error
     if (data) {
       setContacts(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+      return data as Contact
     }
+    throw new Error('创建联系人失败')
   }
 
   const updateContact = async (id: string, contact: Partial<Contact>) => {
@@ -148,6 +157,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else {
       setRecords([])
       setContacts([])
+      setCategories([])
       setLoading(false)
     }
   }, [user])
@@ -156,6 +166,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       records,
       contacts,
+      categories,
       loading,
       refreshData,
       addRecord,

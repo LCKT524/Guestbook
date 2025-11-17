@@ -19,7 +19,7 @@ export default function Import() {
   const [file, setFile] = useState<File | null>(null)
   const [previewData, setPreviewData] = useState<ImportData[]>([])
   const [importing, setImporting] = useState(false)
-  const { addRecord, contacts } = useApp()
+  const { addRecord, contacts, categories } = useApp()
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0]
@@ -97,16 +97,23 @@ export default function Import() {
                 }
               }
 
+              let categoryId = undefined
+              if ((row as any)['分类']) {
+                const cat = categories.find(c => c.name === String((row as any)['分类']))
+                if (cat) categoryId = cat.id
+              }
+
               // 创建记录
               await addRecord({
                 user_id: '', // 将在addRecord中设置
                 contact_id: contactId,
+                category_id: categoryId,
                 type,
                 event_name: row['事件名称'],
-                event_date: row['日期'] || new Date().toISOString().slice(0, 10),
+                record_date: row['日期'] || new Date().toISOString().slice(0, 10),
                 amount,
                 payment_method: row['支付方式'] || '现金',
-                notes: row['备注'],
+                note: row['备注'],
               })
 
               importedCount++

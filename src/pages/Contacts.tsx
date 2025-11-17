@@ -91,8 +91,8 @@ export default function Contacts() {
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">{contact.name}</div>
-                      {contact.relationship && (
-                        <div className="text-sm text-gray-500">{contact.relationship}</div>
+                      {contact.address && (
+                        <div className="text-sm text-gray-500">{contact.address}</div>
                       )}
                       {contact.phone && (
                         <div className="text-sm text-gray-500 flex items-center mt-1">
@@ -103,9 +103,9 @@ export default function Contacts() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-500">往来次数</div>
+                    <div className="text-sm text-gray-500">电话</div>
                     <div className="text-lg font-semibold text-orange-500">
-                      {contact.metadata?.recordCount || 0}
+                      {contact.phone || '—'}
                     </div>
                   </div>
                 </div>

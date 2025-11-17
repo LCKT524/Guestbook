@@ -3,7 +3,7 @@ export type ParsedIntent = {
   contact_name?: string
   event_name: string
   amount: number
-  event_date: string
+  record_date: string
   payment_method?: string
   notes?: string
 }
@@ -26,7 +26,7 @@ export function parseMessage(msg: string): ParsedIntent | null {
   if (!amount || isNaN(amount)) return null
 
   const dateMatch = text.match(/(\d{4}[\/-]\d{1,2}[\/-]\d{1,2})/)
-  const event_date = dateMatch ? normalizeDate(dateMatch[1]) : new Date().toISOString().slice(0, 10)
+  const record_date = dateMatch ? normalizeDate(dateMatch[1]) : new Date().toISOString().slice(0, 10)
 
   let event_name = '人情往来'
   for (const k of EVENT_KEYWORDS) {
@@ -37,8 +37,8 @@ export function parseMessage(msg: string): ParsedIntent | null {
 
   // 简易联系人抽取：给/收到 + 可选角色词 + 中文姓名
   let contact_name: string | undefined
-  const giveMatch = text.match(/给(?:[\u4e00-\u9fa5]{1,6})?([\u4e00-\u9fa5]{2,})/)
-  const recvMatch = text.match(/收到([\u4e00-\u9fa5]{2,})/)
+  const giveMatch = text.match(/给(?:[\u4e00-\u9fa5]{1,6})?([\u4e00-\u9fa5]{2,3})(?=随礼|回礼|婚礼|满月|酒|宴|红包|微信|支付宝|银行卡|\d|元|￥|\s|$)/)
+  const recvMatch = text.match(/收到([\u4e00-\u9fa5]{2,3})(?=随礼|回礼|婚礼|满月|酒|宴|红包|微信|支付宝|银行卡|\d|元|￥|\s|$)/)
   if (isReceived) {
     contact_name = recvMatch?.[1] || giveMatch?.[1]
   } else {
@@ -52,7 +52,7 @@ export function parseMessage(msg: string): ParsedIntent | null {
     contact_name,
     event_name,
     amount,
-    event_date,
+    record_date,
     payment_method,
     notes,
   }

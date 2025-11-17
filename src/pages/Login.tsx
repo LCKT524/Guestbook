@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Phone, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { validatePhone } from '../lib/utils'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -22,7 +23,12 @@ export default function Login() {
 
     setLoading(true)
     try {
-      await signIn(phone, password)
+      const v = validatePhone(phone)
+      if (!v.ok) {
+        toast.error(v.error || '手机号格式不正确')
+        return
+      }
+      await signIn(String(v.value), password)
       toast.success('登录成功！')
       navigate('/')
     } catch (error: any) {

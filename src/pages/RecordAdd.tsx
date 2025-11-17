@@ -12,10 +12,11 @@ export default function RecordAdd() {
   const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10))
   const [amount, setAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('现金')
+  const [categoryId, setCategoryId] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   
-  const { contacts, addRecord } = useApp()
+  const { contacts, categories, addRecord } = useApp()
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -39,10 +40,11 @@ export default function RecordAdd() {
         contact_id: contactId || undefined,
         type,
         event_name: eventName,
-        event_date: eventDate,
+        record_date: eventDate,
         amount: parseFloat(amount),
+        category_id: categoryId || undefined,
         payment_method: paymentMethod,
-        notes: notes || undefined,
+        note: notes || undefined,
       })
       
       toast.success('记录添加成功！')
@@ -126,7 +128,7 @@ export default function RecordAdd() {
             <option value="">选择联系人（可选）</option>
             {contacts.map((contact) => (
               <option key={contact.id} value={contact.id}>
-                {contact.name} {contact.relationship && `(${contact.relationship})`}
+              {contact.name}
               </option>
             ))}
           </select>
@@ -167,6 +169,25 @@ export default function RecordAdd() {
             onChange={(e) => setEventDate(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
           />
+        </div>
+
+        {/* 分类选择 */}
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            分类
+          </label>
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+          >
+            <option value="">选择分类（可选）</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* 金额信息 */}

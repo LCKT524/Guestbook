@@ -6,8 +6,9 @@ import { useNavigate } from 'react-router-dom'
 export default function Records() {
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'gift_given' | 'gift_received'>('all')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [dateFilter, setDateFilter] = useState('')
-  const { records, contacts, loading } = useApp()
+  const { records, contacts, categories, loading } = useApp()
   const navigate = useNavigate()
 
   const filteredRecords = records.filter(record => {
@@ -17,9 +18,10 @@ export default function Records() {
       (contact && contact.name.toLowerCase().includes(searchTerm.toLowerCase()))
     
     const matchesType = typeFilter === 'all' || record.type === typeFilter
-    const matchesDate = !dateFilter || record.event_date === dateFilter
+    const matchesCategory = !categoryFilter || record.category_id === categoryFilter
+    const matchesDate = !dateFilter || record.record_date === dateFilter
     
-    return matchesSearch && matchesType && matchesDate
+    return matchesSearch && matchesType && matchesCategory && matchesDate
   })
 
   // 计算统计数据
@@ -115,6 +117,17 @@ export default function Records() {
               onChange={(e) => setDateFilter(e.target.value)}
               className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
             />
+
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+            >
+              <option value="">全部分类</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -144,6 +157,7 @@ export default function Records() {
             {filteredRecords.map((record) => {
               const contact = contacts.find(c => c.id === record.contact_id)
               const isGiven = record.type === 'gift_given'
+              const cat = categories.find(c => c.id === record.category_id)
               
               return (
                 <div
@@ -161,10 +175,15 @@ export default function Records() {
                           {contact?.name || '未知联系人'}
                           <span className="mx-2">·</span>
                           <Calendar className="w-3 h-3 mr-1" />
-                          {record.event_date}
+                          {record.record_date}
+                          {cat && (
+                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full border" style={{ borderColor: cat.color, color: cat.color }}>
+                              {cat.name}
+                            </span>
+                          )}
                         </div>
-                        {record.notes && (
-                          <div className="text-sm text-gray-500 mt-1">{record.notes}</div>
+                        {record.note && (
+                          <div className="text-sm text-gray-500 mt-1">{record.note}</div>
                         )}
                       </div>
                     </div>
