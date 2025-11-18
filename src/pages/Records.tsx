@@ -58,13 +58,21 @@ export default function Records() {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-gray-900">礼簿</h1>
-            <button
-              onClick={() => navigate('/export')}
-              className="flex items-center px-3 py-2 text-orange-500 hover:text-orange-600"
-            >
-              <Download className="w-4 h-4 mr-1" />
-              导出
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => navigate('/record/add')}
+                className="flex items-center px-3 py-2 text-orange-500 hover:text-orange-600"
+              >
+                记账
+              </button>
+              <button
+                onClick={() => navigate('/export')}
+                className="flex items-center px-3 py-2 text-orange-500 hover:text-orange-600"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                导出
+              </button>
+            </div>
           </div>
         </div>
       </div>

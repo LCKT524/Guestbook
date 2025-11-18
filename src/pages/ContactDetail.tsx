@@ -125,9 +125,6 @@ export default function ContactDetail() {
             <button className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg" onClick={handleSave}>
               <Check className="w-4 h-4 mr-1" />保存
             </button>
-            <button className="inline-flex items-center px-3 py-2 bg-gray-200 text-gray-800 rounded-lg" onClick={() => setEditing(!editing)}>
-              <X className="w-4 h-4 mr-1" />{editing ? '取消编辑' : '编辑'}
-            </button>
           </div>
         </div>
       </div>
