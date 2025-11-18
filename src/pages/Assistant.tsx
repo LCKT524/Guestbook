@@ -83,7 +83,7 @@ export default function Assistant() {
 
     // 仅播报，不保存，等待确认
     setMessages(prev => [...prev, { role: 'assistant', text: analyzed.display! }])
-    setMessages(prev => [...prev, { role: 'assistant', text: '请回复【确认】保存，或继续补充：联系人/备注/日期/金额' }])
+    setMessages(prev => [...prev, { role: 'assistant', text: '请回复【确认】保存｜或继续补充：联系人/事由/日期/金额/备注' }])
     const found = analyzed.data.contact_name ? contacts.find(c => c.name === analyzed.data.contact_name) : undefined
     setPending({ intent: analyzed.data, contactId: found?.id })
   }

@@ -13,7 +13,15 @@ export type AnalyzedIntent = {
 function formatDisplay(intent: AnalyzedIntent) {
   const title = intent.type === 'gift_received' ? '新收入记录' : '新支出记录'
   const name = intent.contact_name || '未知'
-  return `📌 ${title} ▸ ${name} ▸ 金额：¥${intent.amount} ▸ 日期：${intent.record_date} ▸ 备注：`
+  return [
+    `📌 ${title}`,
+    `联系人：${name}`,
+    `事由：${intent.event_name}`,
+    `金额：¥${intent.amount}`,
+    `日期：${intent.record_date}`,
+    `支付：${intent.payment_method || '—'}`,
+    `备注：${intent.notes || ''}`
+  ].join('\n')
 }
 
 export async function analyze(text: string): Promise<{ ok: boolean, data?: AnalyzedIntent, display?: string, error?: string }> {
