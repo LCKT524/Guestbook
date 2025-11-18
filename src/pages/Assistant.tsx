@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { SendHorizonal, Sparkles } from 'lucide-react'
+import { SendHorizonal, Sparkles, Check, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import { useApp } from '../contexts/AppContext'
 import { analyze } from '../lib/agent/agentBridge'
 
-type ChatMsg = { role: 'user' | 'assistant', text: string }
+type ChatMsg = { role: 'user' | 'assistant', text: string, kind?: 'text' | 'confirm' | 'card' }
 
 export default function Assistant() {
   const [input, setInput] = useState('')
@@ -27,6 +27,44 @@ export default function Assistant() {
     contactId?: string
   }>({ intent: null })
 
+  const confirmPending = async () => {
+    if (!pending.intent) {
+      setMessages(prev => [...prev, { role: 'assistant', text: '暂无待确认记录，请先输入要记录的内容。', kind: 'text' }])
+      return
+    }
+    try {
+      let contactId = pending.contactId
+      if (!contactId && pending.intent?.contact_name) {
+        const found = contacts.find(c => c.name === pending.intent?.contact_name)
+        if (found) {
+          contactId = found.id
+        } else if (user) {
+          const created = await addContact({ user_id: user.id, name: pending.intent?.contact_name })
+          contactId = created.id
+        }
+      }
+      await addRecord({
+        user_id: user!.id,
+        contact_id: contactId,
+        type: pending.intent!.type,
+        event_name: pending.intent!.event_name,
+        record_date: pending.intent!.record_date,
+        amount: pending.intent!.amount,
+        payment_method: pending.intent!.payment_method,
+        note: pending.intent!.notes,
+      })
+      setMessages(prev => [...prev, { role: 'assistant', text: '✔️ 已保存', kind: 'text' }])
+      setPending({ intent: null, contactId: undefined })
+    } catch (e: any) {
+      setMessages(prev => [...prev, { role: 'assistant', text: e?.message || '保存失败', kind: 'text' }])
+    }
+  }
+
+  const rejectPending = () => {
+    setPending({ intent: null, contactId: undefined })
+    setMessages(prev => [...prev, { role: 'assistant', text: '已取消该记录。您可以继续输入新的内容。', kind: 'text' }])
+  }
+
   const handleSend = async () => {
     const text = input.trim()
     if (!text) return
@@ -38,41 +76,9 @@ export default function Assistant() {
       return
     }
 
-    // 确认保存
-    if (/^确认(?:保存)?$/.test(text)) {
-      if (!pending.intent) {
-        setMessages(prev => [...prev, { role: 'assistant', text: '暂无待确认记录，请先输入要记录的内容。' }])
-        return
-      }
-      try {
-        let contactId = pending.contactId
-        if (!contactId && pending.intent?.contact_name) {
-          const found = contacts.find(c => c.name === pending.intent?.contact_name)
-          if (found) {
-            contactId = found.id
-          } else if (user) {
-            const created = await addContact({ user_id: user.id, name: pending.intent?.contact_name })
-            contactId = created.id
-          }
-        }
-        await addRecord({
-          user_id: user!.id,
-          contact_id: contactId,
-          type: pending.intent!.type,
-          event_name: pending.intent!.event_name,
-          record_date: pending.intent!.record_date,
-          amount: pending.intent!.amount,
-          payment_method: pending.intent!.payment_method,
-          note: pending.intent!.notes,
-        })
-        setMessages(prev => [...prev, { role: 'assistant', text: '✔️ 已保存' }])
-        setPending({ intent: null, contactId: undefined })
-        return
-      } catch (e: any) {
-        toast.error(e?.message || '保存失败')
-        return
-      }
-    }
+    // 确认保存（文本命令兜底）
+    if (/^确认(?:保存)?$/.test(text)) { await confirmPending(); return }
+    if (/^拒绝|取消$/.test(text)) { rejectPending(); return }
 
     const analyzed = await analyze(text)
     if (!analyzed.ok || !analyzed.data) {
@@ -82,8 +88,8 @@ export default function Assistant() {
     }
 
     // 仅播报，不保存，等待确认
-    setMessages(prev => [...prev, { role: 'assistant', text: analyzed.display! }])
-    setMessages(prev => [...prev, { role: 'assistant', text: '请回复【确认】保存｜或继续补充：联系人/事由/日期/金额/备注' }])
+    setMessages(prev => [...prev, { role: 'assistant', text: analyzed.display!, kind: 'card' }])
+    setMessages(prev => [...prev, { role: 'assistant', text: 'confirm', kind: 'confirm' }])
     const found = analyzed.data.contact_name ? contacts.find(c => c.name === analyzed.data.contact_name) : undefined
     setPending({ intent: analyzed.data, contactId: found?.id })
   }
@@ -100,9 +106,23 @@ export default function Assistant() {
           <div className="space-y-3">
             {messages.map((m, idx) => (
               <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${m.role === 'user' ? 'bg-orange-100 text-gray-900' : 'bg-gray-100 text-gray-800'}`}>
-                  {m.text}
-                </div>
+                {m.kind === 'confirm' ? (
+                  <div className="max-w-[80%] px-3 py-2 rounded-lg text-sm bg-gray-100 text-gray-800">
+                    <div className="flex items-center space-x-2">
+                      <button onClick={confirmPending} className="inline-flex items-center px-3 py-1.5 bg-green-600 text-white rounded">
+                        <Check className="w-4 h-4 mr-1" /> 确认
+                      </button>
+                      <button onClick={rejectPending} className="inline-flex items-center px-3 py-1.5 bg-gray-300 text-gray-800 rounded">
+                        <X className="w-4 h-4 mr-1" /> 拒绝
+                      </button>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">也可直接输入：确认 / 拒绝</div>
+                  </div>
+                ) : (
+                  <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${m.role === 'user' ? 'bg-orange-100 text-gray-900' : 'bg-gray-100 text-gray-800'} ${m.kind === 'card' ? 'whitespace-pre-line border border-gray-200' : ''}`}>
+                    {m.text}
+                  </div>
+                )}
               </div>
             ))}
           </div>
