@@ -21,7 +21,9 @@ export default function Home() {
     .filter(record => record.type === 'gift_received')
     .reduce((sum, record) => sum + record.amount, 0)
 
-  const recentRecords = records.slice(0, 5)
+  const recentRecords = [...records]
+    .sort((a, b) => (a.record_date < b.record_date ? 1 : -1))
+    .slice(0, 5)
   const netMonthly = monthlyReceived - monthlyGiven
 
   const months: string[] = Array.from({ length: 6 }, (_, i) => {

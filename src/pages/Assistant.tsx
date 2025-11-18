@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import { useApp } from '../contexts/AppContext'
 import { analyze } from '../lib/agent/agentBridge'
+import type { AnalyzedIntent } from '../lib/agent/agentBridge'
 
 type ChatMsg = { role: 'user' | 'assistant', text: string, kind?: 'text' | 'confirm' | 'card' }
 
@@ -13,18 +14,11 @@ export default function Assistant() {
     { role: 'assistant', text: '你好，我是人情小精灵。试试说：“刚给同事张伟随礼800元结婚红包”。' }
   ])
   const { user } = useAuth()
-  const { contacts, addContact, addRecord } = useApp()
+  const { contacts, records, categories, addContact, addRecord, updateRecord, deleteRecord } = useApp()
   const [pending, setPending] = useState<{
-    intent: {
-      type: 'gift_given' | 'gift_received'
-      contact_name?: string
-      event_name: string
-      amount: number
-      record_date: string
-      payment_method?: string
-      notes?: string
-    } | null,
-    contactId?: string
+    intent: AnalyzedIntent | null,
+    contactId?: string,
+    targetRecordId?: string
   }>({ intent: null })
   const [confirmDisabled, setConfirmDisabled] = useState(false)
 
@@ -35,28 +29,76 @@ export default function Assistant() {
       return
     }
     try {
-      let contactId = pending.contactId
-      if (!contactId && pending.intent?.contact_name) {
-        const found = contacts.find(c => c.name === pending.intent?.contact_name)
-        if (found) {
-          contactId = found.id
-        } else if (user) {
-          const created = await addContact({ user_id: user.id, name: pending.intent?.contact_name })
-          contactId = created.id
+      if (pending.intent.op === 'create') {
+        let contactId = pending.contactId
+        if (!contactId && pending.intent?.contact_name) {
+          const found = contacts.find(c => c.name === pending.intent?.contact_name)
+          if (found) {
+            contactId = found.id
+          } else if (user) {
+            const created = await addContact({ user_id: user.id, name: pending.intent?.contact_name })
+            contactId = created.id
+          }
         }
+        await addRecord({
+          user_id: user!.id,
+          contact_id: contactId,
+          type: pending.intent!.type as any,
+          event_name: String(pending.intent!.event_name || ''),
+          record_date: String(pending.intent!.record_date || ''),
+          amount: Number(pending.intent!.amount || 0),
+          payment_method: pending.intent!.payment_method,
+        })
+        setMessages(prev => [...prev, { role: 'assistant', text: '✔️ 已保存', kind: 'text' }])
+        setPending({ intent: null, contactId: undefined, targetRecordId: undefined })
+        return
       }
-      await addRecord({
-        user_id: user!.id,
-        contact_id: contactId,
-        type: pending.intent!.type,
-        event_name: pending.intent!.event_name,
-        record_date: pending.intent!.record_date,
-        amount: pending.intent!.amount,
-        payment_method: pending.intent!.payment_method,
-        note: pending.intent!.notes,
-      })
-      setMessages(prev => [...prev, { role: 'assistant', text: '✔️ 已保存', kind: 'text' }])
-      setPending({ intent: null, contactId: undefined })
+      if (pending.intent.op === 'update') {
+        let targetId = pending.targetRecordId || pending.intent.record_id
+        if (!targetId) {
+          const cand = records
+            .filter(r => (!pending.intent.contact_name || contacts.find(c => c.id === r.contact_id)?.name === pending.intent.contact_name))
+            .filter(r => (!pending.intent.event_name || r.event_name === pending.intent.event_name))
+            .sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime())[0]
+          targetId = cand?.id
+        }
+        if (!targetId) {
+          setMessages(prev => [...prev, { role: 'assistant', text: '未找到需要更新的记录，请提供更明确的线索。', kind: 'text' }])
+          return
+        }
+        const patch: any = {}
+        if (pending.intent.event_name) patch.event_name = pending.intent.event_name
+        if (pending.intent.record_date) patch.record_date = pending.intent.record_date
+        if (typeof pending.intent.amount === 'number') patch.amount = pending.intent.amount
+        if (pending.intent.payment_method) patch.payment_method = pending.intent.payment_method
+        
+        if (pending.intent.category_name) {
+          const cat = categories.find(c => c.name === pending.intent.category_name)
+          if (cat) patch.category_id = cat.id
+        }
+        await updateRecord(targetId, patch)
+        setMessages(prev => [...prev, { role: 'assistant', text: '✔️ 已更新', kind: 'text' }])
+        setPending({ intent: null, contactId: undefined, targetRecordId: undefined })
+        return
+      }
+      if (pending.intent.op === 'delete') {
+        let targetId = pending.targetRecordId || pending.intent.record_id
+        if (!targetId) {
+          const cand = records
+            .filter(r => (!pending.intent.contact_name || contacts.find(c => c.id === r.contact_id)?.name === pending.intent.contact_name))
+            .filter(r => (!pending.intent.event_name || r.event_name === pending.intent.event_name))
+            .sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime())[0]
+          targetId = cand?.id
+        }
+        if (!targetId) {
+          setMessages(prev => [...prev, { role: 'assistant', text: '未找到需要删除的记录，请提供更明确的线索。', kind: 'text' }])
+          return
+        }
+        await deleteRecord(targetId)
+        setMessages(prev => [...prev, { role: 'assistant', text: '✔️ 已删除', kind: 'text' }])
+        setPending({ intent: null, contactId: undefined, targetRecordId: undefined })
+        return
+      }
     } catch (e: any) {
       setMessages(prev => [...prev, { role: 'assistant', text: e?.message || '保存失败', kind: 'text' }])
     }
@@ -83,19 +125,33 @@ export default function Assistant() {
     if (/^确认(?:保存)?$/.test(text)) { await confirmPending(); return }
     if (/^拒绝|取消$/.test(text)) { rejectPending(); return }
 
-    const analyzed = await analyze(text)
+    const analyzed = await analyze(text, { contacts: contacts.map(c => c.name), categories: categories.map(c => c.name) })
     if (!analyzed.ok || !analyzed.data) {
       const reply = analyzed.error || '我没理解你的意思。你可以这样描述：“给李雷随礼500元婚礼，微信”。'
       setMessages(prev => [...prev, { role: 'assistant', text: reply }])
       return
     }
-
-    // 仅播报，不保存，等待确认
+    if (analyzed.data.op === 'list') {
+      const f = analyzed.data
+      const list = records
+        .filter(r => (!f.type || r.type === f.type))
+        .filter(r => (!f.startDate || new Date(r.record_date).getTime() >= new Date(f.startDate).getTime()))
+        .filter(r => (!f.endDate || new Date(r.record_date).getTime() <= new Date(f.endDate).getTime()))
+        .filter(r => (!f.contact_name || contacts.find(c => c.id === r.contact_id)?.name === f.contact_name))
+        .filter(r => (!f.category_name || categories.find(c => c.id === r.category_id)?.name === f.category_name))
+      const lines = list.slice(0, 5).map(r => {
+        const name = contacts.find(c => c.id === r.contact_id)?.name || '—'
+        return `${r.record_date} ${name} ¥${r.amount} ${r.event_name}`
+      })
+      const summary = `共${list.length}条\n` + lines.join('\n')
+      setMessages(prev => [...prev, { role: 'assistant', text: summary, kind: 'card' }])
+      return
+    }
     setConfirmDisabled(false)
-    setMessages(prev => [...prev, { role: 'assistant', text: analyzed.display!, kind: 'card' }])
+    setMessages(prev => [...prev, { role: 'assistant', text: analyzed.display || '请确认操作', kind: 'card' }])
     setMessages(prev => [...prev, { role: 'assistant', text: 'confirm', kind: 'confirm' }])
     const found = analyzed.data.contact_name ? contacts.find(c => c.name === analyzed.data.contact_name) : undefined
-    setPending({ intent: analyzed.data, contactId: found?.id })
+    setPending({ intent: analyzed.data, contactId: found?.id, targetRecordId: analyzed.data.record_id })
   }
 
   return (

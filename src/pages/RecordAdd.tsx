@@ -4,6 +4,7 @@ import { useApp } from '../contexts/AppContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import Select from '../components/Select'
 
 export default function RecordAdd() {
   const [type, setType] = useState<'gift_given' | 'gift_received'>('gift_given')
@@ -120,10 +121,10 @@ export default function RecordAdd() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             联系人
           </label>
-          <select
+          <Select
             value={contactId}
             onChange={(e) => setContactId(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+            className=""
           >
             <option value="">选择联系人（可选）</option>
             {contacts.map((contact) => (
@@ -131,7 +132,7 @@ export default function RecordAdd() {
               {contact.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* 事件信息 */}
@@ -176,10 +177,10 @@ export default function RecordAdd() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             分类
           </label>
-          <select
+          <Select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+            className=""
           >
             <option value="">选择分类（可选）</option>
             {categories.map((cat) => (
@@ -187,7 +188,7 @@ export default function RecordAdd() {
                 {cat.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* 金额信息 */}
@@ -213,17 +214,17 @@ export default function RecordAdd() {
           <label className="block text-sm font-medium text-gray-700 mb-2 mt-4">
             支付方式
           </label>
-          <select
+          <Select
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+            className=""
           >
             {paymentMethods.map((method) => (
               <option key={method} value={method}>
                 {method}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* 备注 */}

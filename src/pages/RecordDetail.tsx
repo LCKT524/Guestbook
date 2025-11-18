@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Calendar, User, DollarSign, Tag, Trash2, Pencil, Check, X } from 'lucide-react'
+import Select from '../components/Select'
 import { useApp } from '../contexts/AppContext'
 import toast from 'react-hot-toast'
 
@@ -140,15 +141,15 @@ export default function RecordDetail() {
               <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg" />
 
               <label className="block text-sm text-gray-700">支付方式</label>
-              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg">
+              <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                 {paymentMethods.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
+              </Select>
 
               <label className="block text-sm text-gray-700">分类</label>
-              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg">
+              <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 <option value="">未分类</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              </Select>
 
               <label className="block text-sm text-gray-700">备注</label>
               <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full p-3 border border-gray-300 rounded-lg" />

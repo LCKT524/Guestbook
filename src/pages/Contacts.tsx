@@ -33,21 +33,6 @@ export default function Contacts() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 页面标题 */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-900">联系人</h1>
-            <button
-              onClick={() => navigate('/contact/add')}
-              className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              添加
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* 搜索栏 */}
       <div className="px-4 py-4">
@@ -66,7 +51,7 @@ export default function Contacts() {
       </div>
 
       {/* 联系人列表 */}
-      <div className="px-4 pb-20">
+      <div className="px-4">
         {filteredContacts.length === 0 ? (
           <div className="text-center py-12">
             <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -113,10 +98,7 @@ export default function Contacts() {
                     </div>
                   </div>
                   <div className="text-right flex items-center space-x-2">
-                    <div className="text-sm text-gray-500">电话</div>
-                    <div className="text-lg font-semibold text-orange-500">
-                      {contact.phone || '—'}
-                    </div>
+                    <div className="text-sm text-gray-500">操作</div>
                     <button
                       className="p-2 text-gray-400 hover:text-red-600"
                       onClick={(e) => { e.stopPropagation(); handleDelete(contact.id) }}

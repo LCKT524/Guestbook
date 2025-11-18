@@ -3,6 +3,7 @@ import { Search, Filter, Download, Calendar, DollarSign, User, Trash2 } from 'lu
 import toast from 'react-hot-toast'
 import { useApp } from '../contexts/AppContext'
 import { useNavigate } from 'react-router-dom'
+import Select from '../components/Select'
 
 export default function Records() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -53,29 +54,6 @@ export default function Records() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 页面标题 */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-900">礼簿</h1>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => navigate('/record/add')}
-                className="flex items-center px-3 py-2 text-orange-500 hover:text-orange-600"
-              >
-                记账
-              </button>
-              <button
-                onClick={() => navigate('/export')}
-                className="flex items-center px-3 py-2 text-orange-500 hover:text-orange-600"
-              >
-                <Download className="w-4 h-4 mr-1" />
-                导出
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* 统计卡片 */}
       <div className="px-4 py-4">
@@ -118,40 +96,40 @@ export default function Records() {
             />
           </div>
 
-          <div className="flex space-x-2">
-            <select
+          <div className="grid grid-cols-3 gap-2">
+            <Select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as any)}
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+              className=""
             >
               <option value="all">全部类型</option>
               <option value="gift_given">送礼</option>
               <option value="gift_received">收礼</option>
-            </select>
+            </Select>
 
             <input
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
             />
 
-            <select
+            <Select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+              className=""
             >
               <option value="">全部分类</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
       </div>
 
       {/* 记录列表 */}
-      <div className="px-4 pb-20">
+      <div className="px-4">
         {filteredRecords.length === 0 ? (
           <div className="text-center py-12">
             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -176,41 +154,41 @@ export default function Records() {
               const contact = contacts.find(c => c.id === record.contact_id)
               const isGiven = record.type === 'gift_given'
               const cat = categories.find(c => c.id === record.category_id)
-              
+
               return (
                 <div
                   key={record.id}
                   className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => navigate(`/record/${record.id}`)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${isGiven ? 'bg-red-500' : 'bg-green-500'}`} />
-                      <div className="flex-1">
+                  <div className="grid grid-cols-[1fr,auto] gap-3">
+                    <div>
+                      <div className="flex items-center justify-between">
                         <div className="font-medium text-gray-900">{record.event_name}</div>
-                        <div className="text-sm text-gray-600 flex items-center mt-1">
-                          <User className="w-3 h-3 mr-1" />
-                          {contact?.name || '未知联系人'}
-                          <span className="mx-2">·</span>
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {record.record_date}
-                          {cat && (
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full border" style={{ borderColor: cat.color, color: cat.color }}>
-                              {cat.name}
-                            </span>
-                          )}
-                        </div>
-                        {record.note && (
-                          <div className="text-sm text-gray-500 mt-1">{record.note}</div>
+                        {cat && (
+                          <span className="ml-2 px-2 py-0.5 text-xs rounded-full border" style={{ borderColor: cat.color, color: cat.color }}>
+                            {cat.name}
+                          </span>
                         )}
                       </div>
+                      <div className="text-sm text-gray-600 flex items-center mt-1">
+                        <div className={`w-2 h-2 rounded-full mr-2 ${isGiven ? 'bg-red-500' : 'bg-green-500'}`} />
+                        <User className="w-3 h-3 mr-1" />
+                        <span className="mr-2">{contact?.name || '未知联系人'}</span>
+                        <Calendar className="w-3 h-3 mr-1" />
+                        <span>{record.record_date}</span>
+                      </div>
+                      {record.note && (
+                        <div className="text-sm text-gray-500 mt-1 break-words max-h-12 overflow-hidden">{record.note}</div>
+                      )}
                     </div>
-                    <div className="text-right flex items-center space-x-2">
+
+                    <div className="flex flex-col items-end space-y-1">
                       <div className={`text-lg font-semibold ${isGiven ? 'text-red-600' : 'text-green-600'}`}>
                         {isGiven ? '-' : '+'}¥{record.amount.toLocaleString()}
                       </div>
                       {record.payment_method && (
-                        <div className="text-xs text-gray-500 mt-1">{record.payment_method}</div>
+                        <div className="text-xs text-gray-500">{record.payment_method}</div>
                       )}
                       <button
                         className="p-2 text-gray-400 hover:text-red-600"

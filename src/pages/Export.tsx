@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Download, Upload, FileText, Calendar, Filter } from 'lucide-react'
+import Select from '../components/Select'
 import { useApp } from '../contexts/AppContext'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
@@ -161,15 +162,15 @@ export default function Export() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 记录类型
               </label>
-              <select
+              <Select
                 value={exportType}
                 onChange={(e) => setExportType(e.target.value as any)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+                className=""
               >
                 <option value="all">全部记录</option>
                 <option value="given">仅送礼记录</option>
                 <option value="received">仅收礼记录</option>
-              </select>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
