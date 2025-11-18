@@ -1,10 +1,8 @@
-import { Outlet } from 'react-router-dom'
-import { useState } from 'react'
+import { Outlet, NavLink } from 'react-router-dom'
 import { Home, PlusCircle, BookOpen, Users, User, Settings, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Layout() {
-  const [activeTab, setActiveTab] = useState('home')
   const { user } = useAuth()
 
   const navItems = [
@@ -28,22 +26,21 @@ export default function Layout() {
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = activeTab === item.id
             
             return (
-              <a
+              <NavLink
                 key={item.id}
-                href={item.href}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-colors ${
-                  isActive
-                    ? 'text-orange-500 bg-orange-50'
-                    : 'text-gray-600 hover:text-orange-500'
-                }`}
+                to={item.href}
+                end={item.href === '/'}
+                className={({ isActive }) =>
+                  `flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-colors ${
+                    isActive ? 'text-orange-500 bg-orange-50' : 'text-gray-600 hover:text-orange-500'
+                  }`
+                }
               >
                 <Icon className="w-5 h-5 mb-1" />
                 <span className="text-xs">{item.label}</span>
-              </a>
+              </NavLink>
             )
           })}
         </div>

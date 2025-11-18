@@ -26,8 +26,10 @@ export default function Assistant() {
     } | null,
     contactId?: string
   }>({ intent: null })
+  const [confirmDisabled, setConfirmDisabled] = useState(false)
 
   const confirmPending = async () => {
+    setConfirmDisabled(true)
     if (!pending.intent) {
       setMessages(prev => [...prev, { role: 'assistant', text: '暂无待确认记录，请先输入要记录的内容。', kind: 'text' }])
       return
@@ -61,6 +63,7 @@ export default function Assistant() {
   }
 
   const rejectPending = () => {
+    setConfirmDisabled(true)
     setPending({ intent: null, contactId: undefined })
     setMessages(prev => [...prev, { role: 'assistant', text: '已取消该记录。您可以继续输入新的内容。', kind: 'text' }])
   }
@@ -88,6 +91,7 @@ export default function Assistant() {
     }
 
     // 仅播报，不保存，等待确认
+    setConfirmDisabled(false)
     setMessages(prev => [...prev, { role: 'assistant', text: analyzed.display!, kind: 'card' }])
     setMessages(prev => [...prev, { role: 'assistant', text: 'confirm', kind: 'confirm' }])
     const found = analyzed.data.contact_name ? contacts.find(c => c.name === analyzed.data.contact_name) : undefined
@@ -109,10 +113,10 @@ export default function Assistant() {
                 {m.kind === 'confirm' ? (
                   <div className="max-w-[80%] px-3 py-2 rounded-lg text-sm bg-gray-100 text-gray-800">
                     <div className="flex items-center space-x-2">
-                      <button onClick={confirmPending} className="inline-flex items-center px-3 py-1.5 bg-green-600 text-white rounded">
+                      <button onClick={confirmPending} disabled={confirmDisabled} className={`inline-flex items-center px-3 py-1.5 rounded ${confirmDisabled ? 'bg-green-600/60 cursor-not-allowed' : 'bg-green-600 text-white'}`}>
                         <Check className="w-4 h-4 mr-1" /> 确认
                       </button>
-                      <button onClick={rejectPending} className="inline-flex items-center px-3 py-1.5 bg-gray-300 text-gray-800 rounded">
+                      <button onClick={rejectPending} disabled={confirmDisabled} className={`inline-flex items-center px-3 py-1.5 rounded ${confirmDisabled ? 'bg-gray-300/60 text-gray-800 cursor-not-allowed' : 'bg-gray-300 text-gray-800'}`}>
                         <X className="w-4 h-4 mr-1" /> 拒绝
                       </button>
                     </div>
