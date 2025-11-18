@@ -8,7 +8,6 @@ export default function Layout() {
   const navItems = [
     { id: 'home', icon: Home, label: '首页', href: '/' },
     { id: 'records', icon: BookOpen, label: '礼簿', href: '/records' },
-    { id: 'add', icon: PlusCircle, label: '记账', href: '/record/add' },
     { id: 'contacts', icon: Users, label: '联系人', href: '/contacts' },
     { id: 'profile', icon: User, label: '我的', href: '/profile' },
     { id: 'assistant', icon: Sparkles, label: '助手', href: '/assistant' },
