@@ -6,8 +6,10 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import RecordAdd from './pages/RecordAdd'
+import RecordDetail from './pages/RecordDetail'
 import Records from './pages/Records'
 import Contacts from './pages/Contacts'
+import ContactDetail from './pages/ContactDetail'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Assistant from './pages/Assistant'
@@ -71,8 +73,10 @@ function MainApp() {
             }>
               <Route index element={<Home />} />
               <Route path="record/add" element={<RecordAdd />} />
+              <Route path="record/:id" element={<RecordDetail />} />
               <Route path="records" element={<Records />} />
               <Route path="contacts" element={<Contacts />} />
+              <Route path="contact/:id" element={<ContactDetail />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
               <Route path="assistant" element={<Assistant />} />
