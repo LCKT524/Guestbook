@@ -29,7 +29,7 @@ function formatDisplay(intent: AnalyzedIntent) {
   ].join('\n')
 }
 
-export async function analyze(text: string, hints?: { contacts?: string[], categories?: string[] }): Promise<{ ok: boolean, data?: AnalyzedIntent, display?: string, error?: string }> {
+export async function analyze(text: string, hints?: { contacts?: string[], categories?: string[], records?: Array<{ id: string, contact_name?: string, event_name: string, record_date: string, amount: number }> }): Promise<{ ok: boolean, data?: AnalyzedIntent, display?: string, error?: string }> {
   const msg = text.trim()
   if (!msg) return { ok: false, error: '未识别到金额，请补充说明（示例：随礼 800 元或收到回礼 800 元）' }
   try {
@@ -40,7 +40,7 @@ export async function analyze(text: string, hints?: { contacts?: string[], categ
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ text: msg, hints: { contacts: hints?.contacts || [], categories: hints?.categories || [] } }),
+      body: JSON.stringify({ text: msg, hints: { contacts: hints?.contacts || [], categories: hints?.categories || [], records: hints?.records || [] } }),
     })
     const json = await res.json()
     if (json?.ok && json?.data) {

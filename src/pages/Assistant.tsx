@@ -125,7 +125,17 @@ export default function Assistant() {
     if (/^确认(?:保存)?$/.test(text)) { await confirmPending(); return }
     if (/^拒绝|取消$/.test(text)) { rejectPending(); return }
 
-    const analyzed = await analyze(text, { contacts: contacts.map(c => c.name), categories: categories.map(c => c.name) })
+    const analyzed = await analyze(text, {
+      contacts: contacts.map(c => c.name),
+      categories: categories.map(c => c.name),
+      records: records.slice(0, 10).map(r => ({
+        id: r.id,
+        contact_name: contacts.find(c => c.id === r.contact_id)?.name,
+        event_name: r.event_name,
+        record_date: r.record_date,
+        amount: r.amount,
+      }))
+    })
     if (!analyzed.ok || !analyzed.data) {
       const reply = analyzed.error || '我没理解你的意思。你可以这样描述：“给李雷随礼500元婚礼，微信”。'
       setMessages(prev => [...prev, { role: 'assistant', text: reply }])

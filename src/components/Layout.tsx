@@ -19,13 +19,7 @@ export default function Layout() {
     <div className="grid grid-rows-[4rem,1fr,4rem] h-screen bg-gray-50">
       <header className="row-start-1 bg-white border-b border-gray-200 h-16">
         <div className="flex items-center justify-between h-full px-4">
-          <h1 className="text-lg font-semibold text-gray-900">
-            {pathname === '/' && '首页'}
-            {pathname.startsWith('/records') && '礼簿'}
-            {pathname.startsWith('/contacts') && '联系人'}
-            {pathname.startsWith('/assistant') && '助手'}
-            {pathname.startsWith('/profile') && '我的'}
-          </h1>
+          <div className="text-lg font-semibold text-gray-900"></div>
           <div className="flex items-center space-x-2">
             {pathname.startsWith('/records') && (
               <button

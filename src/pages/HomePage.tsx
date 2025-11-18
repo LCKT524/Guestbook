@@ -8,10 +8,11 @@ export default function Home() {
   const { user } = useAuth()
 
   // 计算统计数据
-  const currentMonth = new Date().toISOString().slice(0, 7)
-  const monthlyRecords = records.filter(record => 
-    record.record_date.startsWith(currentMonth)
-  )
+  const now = new Date()
+  const monthlyRecords = records.filter(record => {
+    const d = new Date(record.record_date)
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+  })
 
   const monthlyGiven = monthlyRecords
     .filter(record => record.type === 'gift_given')
@@ -32,7 +33,11 @@ export default function Home() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })
   const monthlySeries = months.map(m => {
-    const rs = records.filter(r => r.record_date.startsWith(m))
+    const [y, mm] = m.split('-').map(n => parseInt(n, 10))
+    const rs = records.filter(r => {
+      const d = new Date(r.record_date)
+      return d.getFullYear() === y && d.getMonth() + 1 === mm
+    })
     const given = rs.filter(r => r.type === 'gift_given').reduce((s, r) => s + r.amount, 0)
     const recv = rs.filter(r => r.type === 'gift_received').reduce((s, r) => s + r.amount, 0)
     return recv - given
